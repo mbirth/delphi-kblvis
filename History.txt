@@ -9,6 +9,7 @@ x Fixed, + Added, * Improved/Changed, i Information
 x : Memo field now jumps to cursor position after key was clicked
 
 * : more optimizations
+* : font size now depends on key height
 
 
 2004-02-20 (1.2)

@@ -419,7 +419,9 @@ begin
     Pen.Color := clBlack;
     Font.Name := 'Arial';
     Font.Color := clBlack;
-    Font.Size := 8;
+    Font.Height := ((map.bottom-map.top) DIV map.rows)-4;
+    if (Font.Height>22) then Font.Height := 22;
+    if (Font.Height<12) then Font.Height := 12;
     Rectangle(Rect(map.oleft, map.otop, map.oright+1, map.obottom+1));
     FillRect(Rect(map.left, map.top, map.right+1, map.bottom+1));
     for i:=0 to Length(map.Data)-1 do begin
@@ -432,7 +434,7 @@ begin
           hicol := clBlack;
           Pen.Width := 1;
         end;
-        Keyrect(map, i, j, keyindex, map.Data[i].keys[j].legend, hicol);
+        if (map.Data[i].keys[j].value<>'0000') then Keyrect(map, i, j, keyindex, map.Data[i].keys[j].legend, hicol);
         if (exoc) then begin
           exoc := false;
           Exit;
