@@ -9,15 +9,20 @@ devices.
 
 The program itself should be self-explanatory.
 The left area is the working space which
-contains the keyboard layout you are working
-on. You can open and save your work using the
-buttons above the text area.
+contains the keyboard layout source code you
+are working on. The syntax of the command in
+the current line is displayed above the text
+area. You can open and save your work using
+the buttons above the syntax line.
 
 The right hand side shows a preview of the
 keyboard so that you get an idea how it
 looks like. Use the SpinControl next to the
 "Visualize!"-button to select the map you
-want to see.
+want to see. Click on a key to jump to that
+key in the KBL source code. The key at the
+cursor position is highlighted using a red
+border.
 
 The bottom left corner contains the unicode
 table. It is loaded from the file

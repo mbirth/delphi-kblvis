@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Forms, Graphics, SysUtils, StrUtils, Spin, ExtCtrls, Dialogs,
-  StdCtrls, Controls, Classes, ComCtrls, Grids, Clipbrd;
+  StdCtrls, Controls, Classes, ComCtrls, Grids, Clipbrd, Messages;
 
 type
   TKBLEditForm = class(TForm)
@@ -81,6 +81,9 @@ type
                  row: integer;
                  key: integer;
                end;
+  TRowCol = record
+              row, col: integer;
+            end;
   TKey = record
            typ: char;
            value: string;
@@ -148,6 +151,12 @@ begin
   end;
 end;
 
+function GetMemoRowCol(M: TMemo): TRowCol;
+begin
+  Result.row := M.Perform(EM_LINEFROMCHAR, M.SelStart, 0);
+  Result.col := M.SelStart - M.Perform(EM_LINEINDEX, Result.row, 0);
+end;
+
 procedure UpdateTitle;
 begin
   with KBLEditForm do begin
@@ -199,28 +208,30 @@ begin
 end;
 
 function GetCursorPos: TSelection;
-var cp, i: integer;
-    t: AnsiString;
+var i: integer;
     test: char;
     m, r, k: integer;
+    cpos: TRowCol;
 begin
   m := 0;
   r := 0;
   k := 0;
-  t := KBLEditForm.Memo1.Lines.Text;
-  cp := KBLEditForm.Memo1.SelStart;
-  for i:=1 to cp+1 do begin
-    test := UpCase(t[i]);
-    if ((i=1) OR (Ord(t[i-1])=10)) AND (test='M') then begin
-      Inc(m);
-      r := 0;
-      k := 0;
+  cpos := GetMemoRowCol(KBLEditForm.Memo1);
+  for i:=0 to cpos.row do begin
+    if (Length(KBLEditForm.Memo1.Lines.Strings[i])>0) then begin
+      test := UpCase(KBLEditForm.Memo1.Lines.Strings[i][1]);
+      Stat('Memo1 #:'+IntToStr(i)+' - value: '+test);
+      if (test='M') then begin
+        Inc(m);
+        r := 0;
+        k := 0;
+      end;
+      if (test='R') then begin
+        Inc(r);
+        k := 0;
+      end;
+      if (test='K') OR (test='L') OR (test='S') then Inc(k);
     end;
-    if ((i=1) OR (Ord(t[i-1])=10)) AND (test='R') then begin
-      Inc(r);
-      k := 0;
-    end;
-    if ((i=1) OR (Ord(t[i-1])=10)) AND ((test='K') OR (test='L') OR (test='S')) then Inc(k);
   end;
   Result.map := m;
   Result.row := r;
@@ -525,12 +536,17 @@ begin
 end;
 
 procedure TKBLEditForm.FormCreate(Sender: TObject);
+var ts: TSelection;
 begin
+  ts.map := 0;
+  ts.row := 0;
+  ts.key := 0;
   if (debug) then Status.Visible := true;
   TimerScroll.Enabled := false;
   LabelFile.Caption := '';
   LabelSyntax.Caption := '';
   ClearScreen;
+  VisMap(1, ts);
   LoadUnicodes;
 end;
 
@@ -599,11 +615,12 @@ procedure TKBLEditForm.ButtonNewClick(Sender: TObject);
 begin
   if (Memo1.Modified) then if (Application.MessageBox('Are you sure to clear everything?', 'Please confirm', MB_YESNO)=IDNO) then Exit;
   Memo1.Clear;
-  Memo1.SetFocus;
   ButtonSave.Enabled := false;
   Memo1.Modified := false;
   LabelFile.Caption := '';
   UpdateTitle;
+  ClearScreen;
+  Memo1.SetFocus;
 end;
 
 procedure UpdateColor;
@@ -688,13 +705,13 @@ begin
   end;
 end;
 
-function GetFirstCharInLine(s: AnsiString; i: integer): char;
-var j: integer;
+function GetFirstCharInLine(m: TMemo): char;
+var p: TRowCol;
 begin
   Result := Chr(0);
-  for j:=i downto 1 do begin
-    if (Ord(s[j])=13) OR (Ord(s[j])=10) then Break;
-    Result := s[j];
+  p := GetMemoRowCol(m);
+  if (Length(m.Lines.Strings[p.row])>0) then begin
+    Result := m.Lines.Strings[p.row][1];
   end;
 end;
 
@@ -728,7 +745,7 @@ end;
 procedure TKBLEditForm.Memo1Change(Sender: TObject);
 var x: char;
 begin
-  x := GetFirstCharInLine(Memo1.Lines.Text, Memo1.SelStart);
+  x := GetFirstCharInLine(Memo1);
   SetSyntax(GetHelpByKey(x));
 end;
 
@@ -776,6 +793,7 @@ end;
 procedure MemoJumpTo(map, row, key: integer);
 var t: AnsiString;
     i: integer;
+    x: char;
     test: char;
 begin
   with KBLEditForm.Memo1 do begin
@@ -789,6 +807,9 @@ begin
       end;
       if (map=0) AND (row=0) AND (key=0) then begin
         SelStart := i-1;
+        x := GetFirstCharInLine(KBLEditForm.Memo1);
+        Perform(EM_SCROLLCARET, 0, 0);
+        SetSyntax(GetHelpByKey(x));
         SetFocus;
         Break;
       end;
@@ -804,6 +825,7 @@ begin
     sel := GetClickedKey(SpinEdit1.Value,x,y);
     if (sel.map>0) then begin
       MemoJumpTo(sel.map, sel.row, sel.key);
+      VisMap(SpinEdit1.Value, sel);
     end;
   end;
 end;

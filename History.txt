@@ -3,6 +3,14 @@ KBL-Visualizer HISTORY
 x Fixed, + Added, * Improved/Changed, i Information
 
 
+2004-02-21
+----------
+
+x : Memo field now jumps to cursor position after key was clicked
+
+* : more optimizations
+
+
 2004-02-20 (1.2)
 ----------------
 
