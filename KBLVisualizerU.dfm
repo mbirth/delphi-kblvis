@@ -32,6 +32,7 @@ object KBLEditForm: TKBLEditForm
     Top = 35
     Width = 208
     Height = 320
+    OnMouseDown = Px00ScreenMouseDown
   end
   object LabelByMarkusBirth: TLabel
     Left = 473

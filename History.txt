@@ -3,6 +3,15 @@ KBL-Visualizer HISTORY
 x Fixed, + Added, * Improved/Changed, i Information
 
 
+2004-02-20 (1.2)
+----------------
+
++ : rounded borders around keys
++ : key at cursor position is marked with red border in visual
++ : click on a key in visual lets the cursor jump to that key
+
+* : some optimizations
+
 
 2004-02-17 (1.1)
 ----------------

@@ -52,6 +52,8 @@ type
     procedure Memo1Change(Sender: TObject);
     procedure TimerScrollTimer(Sender: TObject);
     procedure Memo1Click(Sender: TObject);
+    procedure Px00ScreenMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     { Private declarations }
   public
@@ -74,6 +76,11 @@ const
 
 type
   TArray = array of string;
+  TSelection = record
+                 map: integer;
+                 row: integer;
+                 key: integer;
+               end;
   TKey = record
            typ: char;
            value: string;
@@ -191,6 +198,35 @@ begin
   Result := r;
 end;
 
+function GetCursorPos: TSelection;
+var cp, i: integer;
+    t: AnsiString;
+    test: char;
+    m, r, k: integer;
+begin
+  m := 0;
+  r := 0;
+  k := 0;
+  t := KBLEditForm.Memo1.Lines.Text;
+  cp := KBLEditForm.Memo1.SelStart;
+  for i:=1 to cp+1 do begin
+    test := UpCase(t[i]);
+    if ((i=1) OR (Ord(t[i-1])=10)) AND (test='M') then begin
+      Inc(m);
+      r := 0;
+      k := 0;
+    end;
+    if ((i=1) OR (Ord(t[i-1])=10)) AND (test='R') then begin
+      Inc(r);
+      k := 0;
+    end;
+    if ((i=1) OR (Ord(t[i-1])=10)) AND ((test='K') OR (test='L') OR (test='S')) then Inc(k);
+  end;
+  Result.map := m;
+  Result.row := r;
+  Result.key := k;
+end;
+
 function Hex2Col(h: string): TColor;
 var r,g,b: integer;
 begin
@@ -287,16 +323,16 @@ begin
   Result := r;
 end;
 
-procedure KeyRect(map: TMap; i,j,ki: integer; lbl: string);
-const space = 2;
-var top, left, bottom, right: integer;  // final rect for key
+function GetKeyRect(map: TMap; i,j: integer): TRect;
+const space = 1.5;
+var key: TKey;
     dt, dl, db, dr: double; // final rect as double
     mw, mh: double; // keymap width/height
-    tw, th: integer; // Text width/height
-    ow, oh: double; // output key width/height
-    key: TKey;
+    k, ki: integer; // key-index
 begin
   try
+    ki := 1;
+    for k:=0 to j-1 do ki := ki + map.Data[i].keys[k].width;
     key := map.Data[i].keys[j];
     Stat('map: ('+IntToStr(map.left)+','+IntToStr(map.top)+'),('+IntToStr(map.right)+','+IntToStr(map.bottom)+')');
     mw := map.right-map.left;
@@ -306,19 +342,45 @@ begin
     dr := map.left + (mw/map.cols) * (ki-1+key.width) - space;
     dt := map.top + (mh/(map.rows)) * i + space;  // ki=keyindex 1..x; i=row 0..x
     db := map.top + (mh/(map.rows)) * (i+1) - space;
-    ow := dr-dl+1;
-    oh := db-dt+1;
-    left := Round(dl);
-    right := Round(dr);
-    top := Round(dt);
-    bottom := Round(db);
+    Result.left := Round(dl);
+    Result.right := Round(dr)+1;
+    Result.top := Round(dt);
+    Result.bottom := Round(db)+1;
+  except
+    on e: Exception do begin
+      ShowMessage('Exception: '+e.Message+CRLF+CRLF+'Something seems to be wrong with this map.');
+      exoc := true;
+      Exit;
+    end;
+  end;
+end;
+
+procedure KeyRect(map: TMap; i,j,ki: integer; lbl: string; hicol: TColor);
+var top, left, bottom, right: integer;  // final rect for key
+    tw, th: integer; // Text width/height
+    ow, oh: double; // output key width/height
+    key: TKey;
+    keyrect: TRect;
+begin
+  try
+    key := map.Data[i].keys[j];
+    keyrect := GetKeyRect(map, i, j);
+    ow := keyrect.Right - keyrect.Left;
+    oh := keyrect.Bottom - keyrect.Top;
+    left := keyrect.Left;
+    right := keyrect.Right;
+    top := keyrect.Top;
+    bottom := keyrect.Bottom;
     with KBLEditForm.Px00Screen.Canvas do begin
       Brush.Color := map.Data[i].keys[j].keycap;
       Font.Color := map.Data[i].keys[j].ink;
-      Rectangle(left, top, right+1, bottom+1);
+      Pen.Color := hicol;
+      Pen.Style := psSolid;
+      RoundRect(left, top, right, bottom,(right-left) DIV 4, (bottom-top) DIV 3);
+      Brush.Style := bsClear;
       th := TextHeight(key.legend);
       tw := TextWidth(key.legend);
-      TextRect(Rect(left,top,right+1,bottom+1),Round(left+(ow-tw)/2),Round(top+(oh-th)/2),key.legend);
+      TextRect(Rect(left,top,right,bottom),Round(left+(ow-tw)/2),Round(top+(oh-th)/2),key.legend);
     end;
   except
     on e: Exception do begin
@@ -329,11 +391,12 @@ begin
   end;
 end;
 
-procedure VisMap(x: integer);
+procedure VisMap(x: integer; highlight: TSelection);
 var m: TArray;
     map: TMap;
     i, j: integer;
     keyindex: integer;
+    hicol: TColor;
 begin
   SetLength(m, 200);
   SetLength(map.Data, 200);
@@ -351,7 +414,14 @@ begin
     for i:=0 to Length(map.Data)-1 do begin
       keyindex := 1;
       for j:=0 to Length(map.Data[i].keys)-1 do begin
-        Keyrect(map, i, j, keyindex, map.Data[i].keys[j].legend);
+        if (x=highlight.map) AND (i+1=highlight.row) AND (j+1=highlight.key) then begin
+          hicol := clRed;
+          Pen.Width := 2;
+        end else begin
+          hicol := clBlack;
+          Pen.Width := 1;
+        end;
+        Keyrect(map, i, j, keyindex, map.Data[i].keys[j].legend, hicol);
         if (exoc) then begin
           exoc := false;
           Exit;
@@ -363,9 +433,12 @@ begin
 end;
 
 procedure TKBLEditForm.ButtonVisualizeClick(Sender: TObject);
+var pos: TSelection;
 begin
   ClearScreen;
-  VisMap(SpinEdit1.Value);
+  pos := GetCursorPos;
+  VisMap(SpinEdit1.Value, pos);
+  Memo1.SetFocus;
 end;
 
 procedure TKBLEditForm.ButtonOpenClick(Sender: TObject);
@@ -447,7 +520,7 @@ begin
     AddUnicode('F809', 'Up - Move cursor up one character');
     AddUnicode('F80A', 'Down - Move cursor down one character');
     AddUnicode('F7FE', 'Horizontal - Move keyboard horizontally');
-    AddUnicode('F7FF', 'Vertical - Move keyboard vertically'); 
+    AddUnicode('F7FF', 'Vertical - Move keyboard vertically');
   end;
 end;
 
@@ -670,6 +743,69 @@ end;
 procedure TKBLEditForm.Memo1Click(Sender: TObject);
 begin
   Memo1Change(Sender);
+end;
+
+function GetClickedKey(mapnum, x, y: integer): TSelection;
+var m: TArray;
+    map: TMap;
+    keyrect: TRect;
+    i,j: integer;
+    found: boolean;
+begin
+  m := GetMap(mapnum);
+  map := ParseMap(m);
+  Result.map := 0;
+  Result.row := 0;
+  Result.key := 0;
+  found := false;
+  for i:=0 to Length(map.Data)-1 do begin
+    for j:=0 to Length(map.Data[i].keys)-1 do begin
+      keyrect := GetKeyRect(map, i, j);
+      if (x>=keyrect.Left) AND (x<=keyrect.Right) AND (y>=keyrect.Top) AND (y<=keyrect.Bottom) then begin
+        Result.map := mapnum;
+        Result.row := i+1;
+        Result.key := j+1;
+        found := true;
+        Break;
+      end;
+    end;
+    if (found) then Break;
+  end;
+end;
+
+procedure MemoJumpTo(map, row, key: integer);
+var t: AnsiString;
+    i: integer;
+    test: char;
+begin
+  with KBLEditForm.Memo1 do begin
+    t := Lines.Text;
+    for i:=1 to Length(t) do begin
+      test := UpCase(t[i]);
+      if (i>1) AND (Ord(t[i-1])=10) then begin
+        if (test='M') AND (map>0) then map := map - 1;
+        if (test='R') AND (map=0) AND (row>0) then row := row - 1;
+        if ((test='K') OR (test='L') OR (test='S')) AND (map=0) AND (row=0) AND (key>0) then key := key - 1;
+      end;
+      if (map=0) AND (row=0) AND (key=0) then begin
+        SelStart := i-1;
+        SetFocus;
+        Break;
+      end;
+    end;
+  end;
+end;
+
+procedure TKBLEditForm.Px00ScreenMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var sel: TSelection;
+begin
+  if (Button=mbLeft) AND (Shift=[ssLeft]) then begin
+    sel := GetClickedKey(SpinEdit1.Value,x,y);
+    if (sel.map>0) then begin
+      MemoJumpTo(sel.map, sel.row, sel.key);
+    end;
+  end;
 end;
 
 end.
