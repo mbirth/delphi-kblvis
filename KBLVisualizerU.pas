@@ -104,10 +104,30 @@ var titlestore: AnsiString;
     exoc: boolean = false;
 
 procedure ClearScreen;
+var fn, t1, t2: string;
+    tw, th: integer;
+    hc, vc: integer;
 begin
+  fn := ChangeFileExt(Application.ExeName,'.bmp');
   with KBLEditForm.Px00Screen do begin
-    Picture.LoadFromFile(ChangeFileExt(Application.ExeName,'.bmp'));
-    Picture.Bitmap.PixelFormat := pf24bit;
+    if (FileExists(fn)) then begin
+      Picture.LoadFromFile(fn);
+      Picture.Bitmap.PixelFormat := pf24bit;
+    end else begin
+      t1 := ExtractFilename(fn);
+      t2 := 'not found';
+      Canvas.Brush.Color := clWhite;
+      Canvas.Brush.Style := bsSolid;
+      Canvas.FillRect(Rect(0,0,Width,Height));
+      Canvas.Font.Color := clBlack;
+      hc := width DIV 2;
+      vc := height DIV 2;
+      tw := Canvas.TextWidth(t1);
+      th := Canvas.TextHeight(t1);
+      Canvas.TextOut(hc-tw DIV 2,vc-th,t1);
+      tw := Canvas.TextWidth(t2);
+      Canvas.TextOut(hc-tw DIV 2,vc+2,t2);
+    end;
   end;
 end;
 
