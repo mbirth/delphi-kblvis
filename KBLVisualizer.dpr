@@ -1,14 +1,14 @@
-program KBLEdit;
+program KBLVisualizer;
 
 uses
   Forms,
-  KBLEditU in 'KBLEditU.pas' {KBLEditForm};
+  KBLVisualizerU in 'KBLVisualizerU.pas' {KBLEditForm};
 
 {$R *.res}
 
 begin
   Application.Initialize;
-  Application.Title := 'PopOnTop Keyboard Layout Editor';
+  Application.Title := 'PopOnTop Keyboard Layout Visualizer';
   Application.CreateForm(TKBLEditForm, KBLEditForm);
   Application.Run;
 end.
