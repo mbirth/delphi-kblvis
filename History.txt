@@ -1,0 +1,29 @@
+KBL-Visualizer HISTORY
+
+x Fixed, + Added, * Improved/Changed, i Information
+
+
+
+2004-02-17 (1.1)
+----------------
+
+x : palette of loaded .bmp was used instead of truecolor
+
++ : unicode support
++ : "New"-button
++ : "Modified"-checks and questions to save/abort
++ : ColorEditor
++ : unicode-Table from unicode-index.txt
++ : Syntax-Helper
++ : some error handling
++ : PopOnTop icon for application
++ : Support for row-specific colors
+
+* : rewrote keymap-painting, now behaves correctly
+* : renamed from "KBL-Editor" to "KBL-Visualizer"
+
+
+2004-02-13 (1.0)
+----------------
+
+i : initial working version

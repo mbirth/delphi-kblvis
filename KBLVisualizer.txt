@@ -1,0 +1,34 @@
+KBL-Editor
+(c)2004 by Markus Birth <mbirth@webwriters.de>
+==============================================
+
+This program allows you to visualize keyboard
+layout files (KBL) of Symbitz Software's
+PopOnTop keyboard replacement for Symbian UIQ
+devices.
+
+The program itself should be self-explanatory.
+The left area is the working space which
+contains the keyboard layout you are working
+on. You can open and save your work using the
+buttons above the text area. THE PROGRAM WON'T
+ASK YOU TO SAVE YOUR WORK BEFORE EXITING!
+
+The right hand side shows a preview of the
+keyboard so that you get an idea how it
+looks like. Use the SpinControl next to the
+"Visualize!"-button to select the map you
+want to see.
+
+Landscape keyboards are not yet supported.
+
+I don't take *ANY* responsibility for any
+damage to your computer which might occur by
+using this program.
+
+Please make sure the file KBLEdit.bmp is in
+the same directory as KBLEdit.exe. If you
+rename KBLEdit.exe, do so with KBLEdit.bmp.
+
+Feel free to replace KBLEdit.bmp by a screen-
+shot of your own Px00. (208x320 pixels)

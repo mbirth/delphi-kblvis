@@ -1,0 +1,6 @@
+KBLVisualizer TODO
+
+-automatically visualize/render map at cursor, update on changes
+-show unicode character in unicode list
+-LANDSCAPE SUPPORT
+ (render in other canvas and translate pixel by pixel to horizontal) or (find out how fonts can be painted vertically)
